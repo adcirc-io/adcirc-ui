@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADCIRC UI Components - slider</title>
+
+    <link href="test.css" rel="stylesheet">
+
+    <script src="d3.v4.min.js"></script>
+    <script src="../build/adcirc-ui.js"></script>
+
+    <style>
+        .slider {
+            padding: 10px 0;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="content">
+        <h1>Slider</h1>
+        <h2>Default Slider</h2>
+        <div id="slider0" class="slider"></div>
+        <h2>Customized Sliders</h2>
+        <div id="slider1" class="slider"></div>
+        <div id="slider2" class="slider"></div>
+        <div id="slider3" class="slider"></div>
+        <div id="slider4" class="slider"></div>
+    </div>
+
+    <script>
+        var ui = adcirc.ui( d3.select( 'body' ) );
+        ui.slider1.height( 10 )
+            .arrows( 'bottom' )
+            .color( 'moccasin' );
+        ui.slider2.height( 20 )
+            .arrows( 'none' )
+            .bar_color( 'orangered' )
+            .current( 25 );
+        ui.slider3.height( 40 )
+            .arrows( 'top' )
+            .color( 'mediumaquamarine' )
+            .current( 50 );
+        ui.slider4.height( 80 )
+            .bar_color( 'white' )
+            .color( 'steelblue' )
+            .domain( [0, 500])
+            .current( 75 );
+    </script>
+
+</body>
+</html>

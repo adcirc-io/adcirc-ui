@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css?family=PT+Serif:400,400i,700');
+
+body {
+    font-family: 'PT Serif', serif;
+    overflow-x: hidden;
+    min-width: 600px;
+    margin: auto;
+}
+
+.content {
+    min-width: 600px;
+    max-width: 900px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+}
+
