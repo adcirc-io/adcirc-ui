@@ -29,23 +29,37 @@
     </div>
 
     <script>
+
         var ui = adcirc.ui( d3.select( 'body' ) );
+        ui.slider0.on( 'value', print_value );
         ui.slider1.height( 10 )
             .arrows( 'bottom' )
-            .color( 'moccasin' );
+            .continuous( true )
+            .color( 'moccasin' )
+            .domain( [0,1] )
+            .on( 'value', print_value );
         ui.slider2.height( 20 )
             .arrows( 'none' )
-            .bar_color( 'orangered' )
-            .current( 25 );
+            .bar( 'orangered' )
+            .current( 25 )
+            .on( 'value', print_value );
         ui.slider3.height( 40 )
             .arrows( 'top' )
             .color( 'mediumaquamarine' )
-            .current( 50 );
+            .current( 50 )
+            .jumpable( false )
+            .on( 'value', print_value );
         ui.slider4.height( 80 )
-            .bar_color( 'white' )
+            .bar( 'white' )
             .color( 'steelblue' )
-            .domain( [0, 500])
-            .current( 75 );
+            .domain( [0, 500], 10 )
+            .current( 75 )
+            .on( 'value', print_value );
+
+        function print_value ( event ) {
+            console.log( event.value );
+        }
+
     </script>
 
 </body>
