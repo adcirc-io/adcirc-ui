@@ -97,7 +97,8 @@ function dispatcher ( object ) {
 
         if ( listenerArray !== undefined ) {
 
-            event.target = object;
+            if ( event.target === undefined )
+                event.target = object;
 
             length = listenerArray.length;
 
@@ -117,7 +118,8 @@ function dispatcher ( object ) {
 
         if ( oneoffArray !== undefined ) {
 
-            event.target = object;
+            if ( event.target === undefined )
+                event.target = object;
 
             length = oneoffArray.length;
 
@@ -439,6 +441,98 @@ function button () {
 
 }
 
+function progress () {
+
+    var _selection;
+    var _bar;
+
+    var _current = 0;
+    var _height = 10;
+    var _max = 100;
+    var _min = 0;
+
+    var _background_color = 'lightgray';
+    var _color = 'steelblue';
+
+    var _value_to_percent = d3.scaleLinear()
+        .domain( [_min, _max] )
+        .range( [0, 100] )
+        .clamp( true );
+
+    function _progress ( selection ) {
+
+        _selection = selection
+            .style( 'position', 'relative' )
+            .style( 'width', '100%' )
+            .style( 'user-select', 'none' );
+
+        _bar = _selection
+            .selectAll( 'div' )
+            .data( [ 'progress_bar' ] );
+
+        _bar.exit()
+            .remove();
+
+        _bar = _bar.enter()
+            .append( 'div' )
+            .merge( _bar );
+
+        _bar.style( 'position', 'relative' )
+            .style( 'left', 0 )
+            .style( 'width', '0%' )
+            .style( 'background-clip', 'content-box' )
+            .style( 'user-select', 'none' );
+
+        // Initialize
+        _progress.background_color( _background_color );
+        _progress.color( _color );
+        _progress.height( _height );
+
+        return _progress;
+
+    }
+
+    _progress.background_color = function ( _ ) {
+
+        if ( !arguments.length ) return _background_color;
+        _background_color = _;
+        if ( _selection ) _selection.style( 'background-color', _background_color );
+        return _progress;
+
+    };
+
+    _progress.color = function ( _ ) {
+
+        if ( !arguments.length ) return _color;
+        _color = _;
+        if ( _bar ) _bar.style( 'background-color', _color );
+        return _progress;
+
+    };
+
+    _progress.height = function ( _ ) {
+
+        if ( !arguments.length ) return _height;
+        _height = _;
+        if ( _selection ) _selection.style( 'min-height', _height + 'px' );
+        if ( _bar ) _bar.style( 'min-height', _height + 'px' );
+        return _progress;
+
+    };
+
+    _progress.progress = function ( _ ) {
+
+        if ( !arguments.length ) return _current;
+        _current = _value_to_percent( _ );
+        if ( _bar ) _bar.style( 'width', _current + '%' );
+        return _progress;
+
+    };
+
+    return _progress;
+
+}
+
 function ui ( selection ) {
 
     var _ui = Object.create( null );
@@ -449,7 +543,7 @@ function ui ( selection ) {
             var _slider = d3.select( this );
             var _id = _slider.attr( 'id' );
 
-            if ( !_id || !!_ui[ _id ] ) {
+            if ( exists( _id ) ) {
                 return unique_error();
             }
 
@@ -463,11 +557,25 @@ function ui ( selection ) {
             var _button = d3.select( this );
             var _id = _button.attr( 'id' );
 
-            if ( !_id || !!_ui[ _id ] ) {
+            if ( exists( _id ) ) {
                 return unique_error();
             }
 
             _ui[ _id ] = button()( _button );
+
+        });
+
+    selection.selectAll( '.adc-progress' )
+        .each( function () {
+
+            var _progress = d3.select( this );
+            var _id = _progress.attr( 'id' );
+
+            if ( exists( _id ) ) {
+                return unique_error();
+            }
+
+            _ui[ _id ] = progress()( _progress );
 
         });
 
@@ -481,15 +589,76 @@ function ui ( selection ) {
 
     }
 
+    function exists ( id ) {
+
+        return !id || !!_ui[ id ];
+
+    }
+
     function unique_error () {
         console.error( 'All UI components must have a unique ID' );
     }
 
 }
 
+function mesh_view ( m ) {
+
+    var _mesh = m;
+    var _view = dispatcher();
+
+    var _name;
+
+    _view.bounding_box = function () {
+
+        return _mesh.bounding_box();
+
+    };
+
+    _view.mesh = function () {
+
+        return _mesh;
+
+    };
+
+    _view.name = function ( _ ) {
+
+        if ( !arguments.length ) return _name;
+        _name = _;
+        _view.dispatch({
+            type: 'modify',
+            target: _mesh,
+            property: 'name',
+            name: _name
+        });
+        return _view;
+
+    };
+
+    _view.select = function () {
+
+        _view.dispatch({
+            type: 'select',
+            target: _mesh
+        });
+
+    };
+
+
+    // Bubble events
+    _mesh.on( 'bounding_box', _view.dispatch );
+    _mesh.on( 'elemental_value', _view.dispatch );
+    _mesh.on( 'nodal_value', _view.dispatch );
+
+
+    return _view;
+
+}
+
 exports.slider = slider;
 exports.button = button;
+exports.progress = progress;
 exports.ui = ui;
+exports.mesh_view = mesh_view;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 

@@ -1,5 +1,6 @@
 import { button } from './button'
 import { slider } from './slider'
+import { progress } from './progress'
 
 function ui ( selection ) {
 
@@ -11,7 +12,7 @@ function ui ( selection ) {
             var _slider = d3.select( this );
             var _id = _slider.attr( 'id' );
 
-            if ( !_id || !!_ui[ _id ] ) {
+            if ( exists( _id ) ) {
                 return unique_error();
             }
 
@@ -25,11 +26,25 @@ function ui ( selection ) {
             var _button = d3.select( this );
             var _id = _button.attr( 'id' );
 
-            if ( !_id || !!_ui[ _id ] ) {
+            if ( exists( _id ) ) {
                 return unique_error();
             }
 
             _ui[ _id ] = button()( _button );
+
+        });
+
+    selection.selectAll( '.adc-progress' )
+        .each( function () {
+
+            var _progress = d3.select( this );
+            var _id = _progress.attr( 'id' );
+
+            if ( exists( _id ) ) {
+                return unique_error();
+            }
+
+            _ui[ _id ] = progress()( _progress );
 
         });
 
@@ -40,6 +55,12 @@ function ui ( selection ) {
         return selection.append( 'div' )
             .style( 'display', 'flex' )
             .style( 'flex-direction', 'column' );
+
+    }
+
+    function exists ( id ) {
+
+        return !id || !!_ui[ id ];
 
     }
 

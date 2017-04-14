@@ -1,3 +1,5 @@
 export { slider } from './src/slider'
 export { button } from './src/button'
+export { progress } from './src/progress'
 export { ui } from './src/ui'
+export { mesh_view } from './src/mesh_view'
