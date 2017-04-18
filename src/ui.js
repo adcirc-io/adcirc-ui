@@ -1,6 +1,7 @@
 import { button } from './button'
 import { slider } from './slider'
 import { progress } from './progress'
+import { gradient } from './gradient'
 
 function ui ( selection ) {
 
@@ -45,6 +46,20 @@ function ui ( selection ) {
             }
 
             _ui[ _id ] = progress()( _progress );
+
+        });
+
+    selection.selectAll( '.adc-gradient' )
+        .each( function () {
+
+            var _gradient = d3.select( this );
+            var _id = _gradient.attr( 'id' );
+
+            if ( exists( _id ) ) {
+                return unique_error();
+            }
+
+            _ui[ _id ] = gradient()( _gradient );
 
         });
 
