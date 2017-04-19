@@ -545,8 +545,12 @@ function horizontal_gradient () {
     var _stop_pixels;
     var _colors = [ 'lightsteelblue', 'steelblue' ];
 
-    var _percent_to_color;
-    var _percent_to_pixel;
+    var _percent_to_color = d3.scaleLinear().domain( [ 0, 1 ] ).range( _colors );
+    var _percent_to_pixel = d3.scaleLinear().domain( [ 0, 1 ] );
+    var _percent_to_value = d3.scaleLinear().domain( [ 0, 1 ] ).range( _values );
+
+    var hover_size = 7;
+    var dragging = null;
 
     var _white = d3.rgb( 'white' );
     var _black = d3.rgb( 'black' );
@@ -563,7 +567,11 @@ function horizontal_gradient () {
         update_stops();
 
         // Set up dragging
-        _canvas.call( d3.drag().on( 'drag', dragged ) );
+        _canvas.call( d3.drag()
+            .on( 'start', clicked )
+            .on( 'drag', dragged )
+            .on( 'end', released )
+        );
 
         // Initial render
         _canvas.each( render );
@@ -573,37 +581,100 @@ function horizontal_gradient () {
 
     }
 
+    _gradient.height = function ( _ ) {
+
+        if ( !arguments.length ) return _height;
+        _height = _;
+        layout( _selection );
+        return _gradient;
+
+    };
+
     _gradient.stops = function ( values, colors ) {
 
         _values = values;
         _colors = colors;
 
-        calculate_percentages();
+        _percent_to_value = d3.scaleLinear()
+            .domain( [ 0, 1 ] )
+            .range( [ values[ 0 ], values[ values.length - 1 ] ] );
+
         update_stops();
 
         _canvas.each( render );
 
+        return _gradient;
+
     };
 
-    return _gradient;
+    return dispatcher( _gradient );
 
 
-    function calculate_percentages () {
+    function clicked () {
 
-        _percentages = _values.map( percentage );
+        var x = d3.mouse( this )[ 0 ];
+        var slider = get_slider( x );
+
+        if ( slider && slider !== _values.length - 1 ) {
+
+            dragging = slider;
+
+        } else {
+
+            dragging = null;
+
+        }
 
     }
 
-    function percentage ( value ) {
+    function dragged () {
 
-        return ( value - _values[0] ) / ( _values[ _values.length - 1 ] - _values[0] );
+        // Get mouse location
+        var x = Math.max( 0, Math.min( this.width - 1, d3.mouse( this )[ 0 ] ) );
 
-    }
+        // Move slider
+        if ( dragging !== null ) {
+            move_slider( dragging, x );
+            update_stops();
+        }
 
-    function dragged( d ) {
-
-        d.mouse = Math.max( 0, Math.min( this.width - 1, d3.mouse(this)[0] ) );
+        // Render
         _canvas.each( render );
+
+    }
+
+    function get_slider ( x ) {
+
+        for ( var i = 0; i < _percentages.length; ++i ) {
+
+            var pixel = _percent_to_pixel( _percentages[ i ] );
+            if ( x > pixel - hover_size && x < pixel + hover_size ) {
+
+                return i;
+
+            }
+
+        }
+
+    }
+
+    function hover () {
+
+        var x = d3.mouse( this )[ 0 ];
+
+        for ( var i = 1; i < _percentages.length - 1; ++i ) {
+
+            var pixel = _percent_to_pixel( _percentages[ i ] );
+            if ( x > pixel - hover_size && x < pixel + hover_size ) {
+
+                _canvas.style( 'cursor', 'pointer' );
+                return;
+
+            }
+
+        }
+
+        _canvas.style( 'cursor', null );
 
     }
 
@@ -614,7 +685,7 @@ function horizontal_gradient () {
             .style( 'user-select', 'none' );
 
         _canvas = selection.selectAll( 'canvas' )
-            .data( [{}] );
+            .data( [ {} ] );
 
         _canvas.exit()
             .remove();
@@ -635,45 +706,40 @@ function horizontal_gradient () {
 
     }
 
-    function update_stops () {
+    function move_slider ( i, x ) {
 
-        _width = parseFloat( _canvas.style( 'width' ) );
+        var percent = _percent_to_pixel.invert( x );
+        var value = _percent_to_value( percent );
 
-        _percent_to_color = d3.scaleLinear()
-            .domain( _percentages )
-            .range( _colors );
+        if ( value > _values[ i + 1 ] ) {
 
-        _percent_to_pixel = d3.scaleLinear()
-            .domain( [ _percentages[0], _percentages[ _percentages.length - 1] ] )
-            .range( [ 0, _width ] );
+            _values[ i ] = _values[ i + 1 ];
+            _values[ i + 1 ] = value;
+            var color = _colors[ i ];
+            _colors[ i ] = _colors[ i + 1 ];
+            _colors[ i + 1 ] = color;
+            dragging = i + 1;
 
-        _stop_pixels = [];
+        } else if ( value < _values[ i - 1 ] ) {
 
-        for ( var i=0; i<_percentages.length; ++i ) {
+            _values[ i ] = _values[ i - 1 ];
+            _values[ i - 1 ] = value;
+            var color = _colors[ i ];
+            _colors[ i ] = _colors[ i - 1 ];
+            _colors[ i - 1 ] = color;
+            dragging = i - 1;
 
-            _stop_pixels.push( _percent_to_pixel( _percentages[i] ) );
+        } else {
+
+            _values[ i ] = value;
 
         }
 
     }
 
-    function hover () {
+    function released () {
 
-        var x = d3.mouse( this )[ 0 ];
-
-        for ( var i=0; i<_percentages.length; ++i ) {
-
-            var pixel = _percent_to_pixel( _percentages[i] );
-            if ( x > pixel - 5 && x < pixel + 5 ) {
-
-                _canvas.style( 'cursor', 'pointer' );
-                return;
-
-            }
-
-        }
-
-        _canvas.style( 'cursor', null );
+        dragging = null;
 
     }
 
@@ -715,6 +781,39 @@ function horizontal_gradient () {
 
     }
 
+    function update_stops () {
+
+        _percentages = _values.map( function ( value ) {
+
+            return _percent_to_value.invert( value );
+
+        } );
+
+        _width = parseFloat( _canvas.style( 'width' ) );
+
+        _percent_to_color = d3.scaleLinear()
+            .domain( _percentages )
+            .range( _colors );
+
+        _percent_to_pixel = d3.scaleLinear()
+            .domain( [ _percentages[ 0 ], _percentages[ _percentages.length - 1 ] ] )
+            .range( [ 0, _width ] );
+
+        _stop_pixels = [];
+
+        for ( var i = 0; i < _percentages.length; ++i ) {
+
+            _stop_pixels.push( Math.round( _percent_to_pixel( _percentages[ i ] ) ) );
+
+        }
+
+        _gradient.dispatch({
+            type: 'gradient',
+            stops: _values,
+            colors: _colors
+        });
+
+    }
 
 }
 
