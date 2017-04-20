@@ -1,5 +1,220 @@
 import { dispatcher } from '../../adcirc-events/index'
 
+function vertical_gradient () {
+
+    var _selection;
+    var _bar;
+    var _track;
+    var _sliders;
+
+    var _bar_width = 50;
+    var _track_width = 75;
+    var _height = 250;
+
+    var _stops = [
+        { stop: 0, color: 'lightsteelblue' },
+        { stop: 1, color: 'steelblue' }
+    ];
+
+    var _percent_to_value = d3.scaleLinear().domain( [ 0, 1 ] ).range( [ 0, 1 ] );
+    var _percent_to_pixel = d3.scaleLinear().domain( [ 0, 1 ] ).range( [ _height, 0 ] );
+
+
+    function _gradient ( selection ) {
+
+        // Keep track of selection that will be the gradient
+        _selection = selection;
+
+        // Apply the layout
+        layout( _selection );
+
+        // Return the gradient
+        return _gradient;
+
+    }
+
+    _gradient.stops = function ( stops, colors ) {
+
+        var extent = d3.extent( stops );
+
+        _percent_to_value.range( extent );
+
+        _stops = [];
+
+        for ( var i=0; i<stops.length; ++i ) {
+
+            _stops.push( { stop: _percent_to_value.invert( stops[i] ), color: colors[i] } );
+
+        }
+
+        _stops = _stops.sort( sort );
+
+        layout( _selection );
+
+        return _gradient;
+
+    };
+
+    function build_css_gradient ( stops ) {
+
+        var css = 'linear-gradient( 0deg, ';
+
+        for ( var i=0; i<stops.length; ++i  ){
+
+            var color = stops[i].color;
+            var percent = 100 * stops[i].stop;
+            css += color + ' ' + percent + '%';
+
+            if ( i < stops.length-1 ) css += ',';
+
+        }
+
+        return css + ')';
+
+    }
+
+    function dragged ( d ) {
+
+        var y = Math.max( 0, Math.min( _height, d3.event.y ) );
+
+        d3.select( this )
+            .style( 'top', y + 'px' );
+
+        d.stop = _percent_to_pixel.invert( y );
+
+        var sorted = _stops.sort( sort );
+
+        _bar.style( 'background', build_css_gradient( sorted ) );
+        _sliders.each( slider_text );
+
+        _gradient.dispatch({
+            type: 'gradient',
+            stops: sorted.map( function ( stop ) { return _percent_to_value( stop.stop ); } ),
+            colors: sorted.map( function ( stop ) { return stop.color; } )
+        });
+
+    }
+
+    function layout ( selection ) {
+
+        selection
+            .style( 'position', 'relative' )
+            .style( 'width', ( _bar_width + _track_width ) + 'px' )
+            .style( 'user-select', 'none' )
+            .style( 'min-height', _height + 'px' );
+
+        _bar = selection
+            .selectAll( '.gradient-bar' )
+            .data( [ {} ] );
+
+        _bar.exit().remove();
+
+        _bar = _bar.enter()
+            .append( 'div' )
+            .attr( 'class', 'gradient-bar' )
+            .merge( _bar );
+
+        _bar.style( 'position', 'absolute' )
+            .style( 'top', 0 )
+            .style( 'left', 0 )
+            .style( 'width', _bar_width + 'px' )
+            .style( 'height', '100%' )
+            .style( 'background', build_css_gradient( _stops ) )
+            .style( 'user-select', 'none' );
+
+        _track = selection
+            .selectAll( '.gradient-track' )
+            .data( [ {} ] );
+
+        _track.exit().remove();
+
+        _track = _track.enter()
+            .append( 'div' )
+            .attr( 'class', 'gradient-track' )
+            .merge( _track );
+
+        _track.style( 'position', 'absolute' )
+            .style( 'top', 0 )
+            .style( 'left', _bar_width + 'px' )
+            .style( 'width', _track_width + 'px' )
+            .style( 'height', '100%' )
+            .style( 'user-select', 'none' );
+
+        position_sliders();
+
+    }
+
+    function position_sliders () {
+
+        _sliders = _track.selectAll( '.slider' )
+            .data( _stops );
+
+        _sliders.exit().remove();
+
+        _sliders = _sliders.enter()
+            .append( 'div' )
+            .attr( 'class', 'slider' )
+            .merge( _sliders );
+
+        _sliders
+            .style( 'width', '0px' )
+            .style( 'height', '1px' )
+            .style( 'border-width', '8px' )
+            .style( 'border-style', 'solid' )
+            .style( 'margin-top', '-8px' )
+            .style( 'margin-left', '-8px')
+            .style( 'position', 'absolute' )
+            .style( 'left', 0 )
+            .each( function ( d ) {
+
+                d3.select( this )
+                    .style( 'top', ( _height - d.stop * _height ) + 'px' )
+                    .style( 'border-color', 'transparent ' + d.color + ' transparent transparent' )
+                    .style( 'user-select', 'none' );
+
+            })
+            .each( slider_text )
+            .call( d3.drag()
+                .on( 'drag', dragged )
+            );
+
+    }
+
+    function sort ( a, b ) {
+
+        return a.stop > b.stop;
+
+    }
+
+    function slider_text ( d ) {
+
+        var text = d3.select( this )
+            .selectAll( 'div' ).data( [ {} ] );
+
+        text.exit().remove();
+
+        text = text.enter()
+            .append( 'div' )
+            .merge( text );
+
+        text.style( 'position', 'absolute' )
+            .style( 'top', '50%' )
+            .style( 'left', '8px' )
+            .style( 'transform', 'translateY(-50%)' )
+            .style( 'padding-left', '4px' )
+            .style( 'font-size', '13px' )
+            .style( 'font-family', 'serif' )
+            .style( 'min-width', ( _track_width - 12 ) + 'px' )
+            .style( 'user-select', 'none' )
+            .style( 'cursor', 'default' )
+            .text( _percent_to_value( d.stop ).toFixed( 2 ) );
+
+    }
+
+    return dispatcher( _gradient );
+
+}
+
 function horizontal_gradient () {
 
     var _selection;
@@ -284,4 +499,5 @@ function horizontal_gradient () {
 
 }
 
-export { horizontal_gradient as gradient }
+// export { horizontal_gradient as gradient }
+export { vertical_gradient as gradient}
