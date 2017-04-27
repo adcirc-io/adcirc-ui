@@ -22,6 +22,10 @@ function progress () {
             .style( 'position', 'relative' )
             .style( 'width', '100%' )
             .style( 'user-select', 'none' );
+            // .style( 'display', 'flex' )
+            // .style( 'justify-content', 'center' )
+            // .style( 'align-items', 'center' )
+            // .style( 'font-size', '14px' );
 
         _bar = _selection
             .selectAll( 'div' )

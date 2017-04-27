@@ -500,4 +500,4 @@ function horizontal_gradient () {
 }
 
 // export { horizontal_gradient as gradient }
-export { vertical_gradient as gradient}
+export { vertical_gradient as gradient }

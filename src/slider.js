@@ -16,9 +16,11 @@ function slider () {
     var _drag_slider = d3.drag().on( 'start', clicked ).on( 'drag', dragged );
     var _draggable = true;
     var _jumpable = true;
+    var _request = false;
 
     var _continuous = false;
     var _step = 1;
+    var _domain = [0, 100];
     var _value_to_value = d3.scaleQuantize();
     var _value_to_percent = d3.scaleLinear().range( [0, 100] ).clamp( true );
     var _pixel_to_value = d3.scaleLinear();
@@ -66,7 +68,7 @@ function slider () {
         _slider.arrows( _arrows );
         _slider.bar( _bar_color );
         _slider.color( _color );
-        _slider.domain( [0,100] );
+        _slider.domain( _domain );
         _slider.draggable( _draggable );
         _slider.height( _height );
         _slider.jumpable( _jumpable );
@@ -132,6 +134,7 @@ function slider () {
     _slider.domain = function ( _ ) {
         if ( !arguments.length ) return _value_to_percent.domain();
 
+        _domain = _;
         var _range = [];
         _step = arguments.length == 2 ? arguments[1] : 1;
         for ( var i=_[0]; i<=_[1]; i+=_step ) _range.push( i );
@@ -171,6 +174,18 @@ function slider () {
         return _slider;
     };
 
+    _slider.needs_request = function ( _ ) {
+        if ( !arguments.length ) return _request;
+        _request = !!_;
+        return _slider;
+    };
+
+    _slider.set = function ( value ) {
+
+        set_current( value );
+
+    };
+
     return dispatcher( _slider );
 
     function clamp ( value ) {
@@ -201,6 +216,23 @@ function slider () {
 
     }
 
+    function dispatch_request ( value ) {
+
+        var request_value = _current;
+        if ( value > _current ) request_value += _step;
+        if ( value < _current ) request_value -= _step;
+
+        if ( request_value !== _current ) {
+
+            _slider.dispatch( {
+                type: 'request',
+                value: request_value
+            } );
+
+        }
+
+    }
+
     function dragged () {
 
         if ( _draggable ) {
@@ -208,7 +240,8 @@ function slider () {
             if ( pixel < 0 ) pixel = 0;
             if ( pixel > _width ) pixel = _width;
             var value = _pixel_to_value( pixel );
-            if ( set_current( value ) ) dispatch_current();
+            if ( _request ) dispatch_request( value );
+            else if ( set_current( value ) ) dispatch_current();
         }
 
     }
