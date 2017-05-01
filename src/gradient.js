@@ -207,7 +207,7 @@ function vertical_gradient () {
             .style( 'min-width', ( _track_width - 12 ) + 'px' )
             .style( 'user-select', 'none' )
             .style( 'cursor', 'default' )
-            .text( _percent_to_value( d.stop ).toFixed( 2 ) );
+            .text( _percent_to_value( d.stop ).toFixed( 5 ) );
 
     }
 
