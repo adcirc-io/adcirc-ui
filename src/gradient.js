@@ -1,4 +1,4 @@
-import { dispatcher } from '../../adcirc-events/index'
+import { dispatcher } from 'adcirc-events'
 
 function vertical_gradient () {
 

@@ -1,4 +1,5 @@
-// https://github.com/atdyer/adcirc-ui Version 0.0.1. Copyright 2017 Tristan Dyer.
+// https://github.com/adcirc-io/adcirc-ui Version 0.0.1. Copyright 2017 Tristan Dyer.
+
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -15,7 +16,7 @@ function dispatcher ( object ) {
     object.on = function ( type, listener ) {
 
         if ( !arguments.length ) return object;
-        if ( arguments.length == 1 ) return _listeners[ type ];
+        if ( arguments.length === 1 ) return _listeners[ type ];
 
         if ( _listeners[ type ] === undefined ) {
 
@@ -36,7 +37,7 @@ function dispatcher ( object ) {
     object.once = function ( type, listener ) {
 
         if ( !arguments.length ) return object;
-        if ( arguments.length == 1 ) return _oneoffs[ type ];
+        if ( arguments.length === 1 ) return _oneoffs[ type ];
 
         if ( _oneoffs[ type ] === undefined ) {
 
@@ -867,65 +868,11 @@ function ui ( selection ) {
 
 }
 
-function mesh_view ( m ) {
-
-    var _mesh = m;
-    var _view = dispatcher();
-
-    var _name;
-
-    _view.bounding_box = function () {
-
-        return _mesh.bounding_box();
-
-    };
-
-    _view.mesh = function () {
-
-        return _mesh;
-
-    };
-
-    _view.name = function ( _ ) {
-
-        if ( !arguments.length ) return _name;
-        _name = _;
-        _view.dispatch({
-            type: 'modify',
-            target: _mesh,
-            property: 'name',
-            name: _name
-        });
-        return _view;
-
-    };
-
-    _view.select = function () {
-
-        _view.dispatch({
-            type: 'select',
-            target: _mesh
-        });
-
-    };
-
-
-    // Bubble events
-    _mesh.on( 'bounding_box', _view.dispatch );
-    _mesh.on( 'elemental_value', _view.dispatch );
-    _mesh.on( 'nodal_value', _view.dispatch );
-
-
-    return _view;
-
-}
-
 exports.slider = slider;
 exports.button = button;
 exports.progress = progress;
 exports.gradient = vertical_gradient;
 exports.ui = ui;
-exports.mesh_view = mesh_view;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
